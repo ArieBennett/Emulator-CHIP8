@@ -4,6 +4,6 @@ This is a practice exercise to create a CHIP-8 interpreter to get used to the co
 
 It follows a guide: http://www.multigesture.net/articles/how-to-write-an-emulator-chip-8-interpreter/
 ## How to run
-The following instructions assume for a Linux-based OS.
+The following instructions assume for a Linux-based OS and requires SDL to be installed.
 1. Download/clone this repository.
 2. //

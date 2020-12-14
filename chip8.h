@@ -19,15 +19,16 @@ class chip8 {
     unsigned char delay_timer;      // 60Hz timer
     unsigned char sound_timer;      // 60Hz timer; counts 60..0, sounds when hits 0
 
+public:
     // other variables
     unsigned char drawFlag;         // controls whether to update the screen or not
 
-    public:
-        void initialize();
-        void loadGame(std::string);
-        void emulateCycle();
-        void drawGraphics();
-        void setKeys();
+
+    void initialize();
+    void loadGame(std::string);
+    void emulateCycle();
+    void drawGraphics();
+    void setKeys();
 };
 
 #endif

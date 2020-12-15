@@ -1,13 +1,13 @@
-#include <SDL2/SDL.h>			// initializing and shutdown functions
-#include <SDL2/SDL_image.h>		// rendering images and graphics on screen
-#include <SDL2/SDL_timer.h> 	// SDL_Delay() functions
+// #include <SDL2/SDL.h>			// initializing and shutdown functions
+// #include <SDL2/SDL_image.h>		// rendering images and graphics on screen
+// #include <SDL2/SDL_timer.h> 	// SDL_Delay() functions
 #include <string>
 #include "chip8.h"
 
 using namespace std;
 
 // variables
-chip8 myChip8;
+Chip8 myChip8;
 string gameName;
 
 // define functions
@@ -41,7 +41,7 @@ void setupGraphics() {
 
 }
 
-void setupGraphics() {
+void setupInput() {
 	
 }
 

@@ -270,28 +270,77 @@ void Chip8::op_0x8XY3() {
     pc += 2;
 }
 
+// 8XY4 := VX = VX + VY, set VF = carry
 void Chip8::op_0x8XY4() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t y = (opcode & 0x00F0) >> 4;
 
+    uint16_t sum = V[x] + V[y];
+
+    if (sum > 255)
+        carryFlag = 1;
+    else
+        carryFlag = 0;
+    
+    V[x] = sum & 0xFFu;
+    pc += 2;
 }
 
+// 8XY5 := VX = VX - VY, VF = not borrow
 void Chip8::op_0x8XY5() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t y = (opcode & 0x00F0) >> 4;
 
+    if (V[x] > V[y])
+        carryFlag = 1;
+    else
+        carryFlag = 0;
+    
+    V[x] = V[x] - V[y];
+    pc += 2;
 }
 
+// 8XY6 := VX = VX >> 1 {ie VX/2}, VF = least sig. byte
 void Chip8::op_0x8XY6() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
 
+    carryFlag = (V[x] & 0x1u);
+    V[x] = V[x] >> 1;
+    pc += 2;
 }
 
+// 8XY5 := VX = VY - VX, VF = not borrow
 void Chip8::op_0x8XY7() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t y = (opcode & 0x00F0) >> 4;
 
+    if (V[y] > V[x])
+        carryFlag = 1;
+    else
+        carryFlag = 0;
+    
+    V[x] = V[y] - V[x];
+    pc += 2;
 }
 
+// 8XYE := VX = VX >> 1 {ie VX*2}, VF = most sig. byte
 void Chip8::op_0x8XYE() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
 
+    carryFlag = (V[x] & 0x80u) >> 7;
+    V[x] = V[x] << 1;
+    pc += 2;
 }
 
+// 9XY0 := if VX != VY, skip next instruction
 void Chip8::op_0x9XY0() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t y = (opcode & 0x00F0) >> 4;
 
+    if (V[x] != V[y])
+        pc += 4;
+    else
+        pc += 2;
 }
 
 void Chip8::op_0xANNN() {

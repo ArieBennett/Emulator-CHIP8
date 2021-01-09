@@ -154,6 +154,10 @@ void Chip8::populateOpTables() {
 
 }
 
+// get a random 8-bit number
+uint8_t randByte() {
+    return rand() % 0xFF;
+}
 
 /* ---- ---- opcode instruction functions ---- ---- */
 void Chip8::op_null() {
@@ -162,7 +166,11 @@ void Chip8::op_null() {
 
 // CLS := clear display
 void Chip8::op_0x00E0() {
+    for (int i = 0; i < (64*32); i++)
+        gfx[i] = 0x0;
     
+    drawFlag = true;
+    pc += 2;
 }
 
 // RET := return from sub-routine
@@ -181,12 +189,13 @@ void Chip8::op_0x1NNN() {
 void Chip8::op_0x2NNN() {
     stack[sp] = pc;
     sp++;
+    pc = opcode & 0x0FFF;
 }
 
 // 3XKK := skip next if Vx = kk
 void Chip8::op_0x3XKK() {
     uint8_t x = (opcode & 0x0F00) >> 8;
-    uint16_t kk = opcode & 0x00FF;
+    uint8_t kk = opcode & 0x00FF;
 
     if (V[x] == kk)
         pc += 4;
@@ -197,7 +206,7 @@ void Chip8::op_0x3XKK() {
 // 4XKK := skip next if Vx != kk
 void Chip8::op_0x4XKK() {
     uint8_t x = (opcode & 0x0F00) >> 8;
-    uint16_t kk = opcode & 0x00FF;
+    uint8_t kk = opcode & 0x00FF;
 
     if (V[x] != kk)
         pc += 4;
@@ -205,7 +214,7 @@ void Chip8::op_0x4XKK() {
         pc += 2;
 }
 
-// 4XKK := skip next if Vx == Vy
+// 5XY0 := skip next if Vx == Vy
 void Chip8::op_0x5XY0() {
     uint8_t x = (opcode & 0x0F00) >> 8;
     uint8_t y = (opcode & 0x00F0) >> 4;
@@ -219,7 +228,7 @@ void Chip8::op_0x5XY0() {
 // 6XKK := Vx = kk
 void Chip8::op_0x6XKK() {
     uint8_t x = (opcode & 0x0F00) >> 8;
-    uint16_t kk = opcode & 0x00FF;
+    uint8_t kk = opcode & 0x00FF;
 
     V[x] = kk;
     pc += 2;
@@ -228,7 +237,7 @@ void Chip8::op_0x6XKK() {
 // 7XKK := Vx = Vx + kk
 void Chip8::op_0x7XKK() {
     uint8_t x = (opcode & 0x0F00) >> 8;
-    uint16_t kk = opcode & 0x00FF;
+    uint8_t kk = opcode & 0x00FF;
 
     V[x] += kk;
     pc += 2;
@@ -261,7 +270,7 @@ void Chip8::op_0x8XY2() {
     pc += 2;
 }
 
-// 8XY3 := VX = VX ^ VY
+// 8XY3 := Vx = Vx ^ Vy
 void Chip8::op_0x8XY3() {
     uint8_t x = (opcode & 0x0F00) >> 8;
     uint8_t y = (opcode & 0x00F0) >> 4;
@@ -270,7 +279,7 @@ void Chip8::op_0x8XY3() {
     pc += 2;
 }
 
-// 8XY4 := VX = VX + VY, set VF = carry
+// 8XY4 := Vx = Vx + Vy, set VF = 1 if carry
 void Chip8::op_0x8XY4() {
     uint8_t x = (opcode & 0x0F00) >> 8;
     uint8_t y = (opcode & 0x00F0) >> 4;
@@ -286,44 +295,44 @@ void Chip8::op_0x8XY4() {
     pc += 2;
 }
 
-// 8XY5 := VX = VX - VY, VF = not borrow
+// 8XY5 := Vx = Vx - Vy, VF = 1 if "not borrow"
 void Chip8::op_0x8XY5() {
     uint8_t x = (opcode & 0x0F00) >> 8;
     uint8_t y = (opcode & 0x00F0) >> 4;
 
-    if (V[x] > V[y])
-        carryFlag = 1;
-    else
+    if (V[y] > V[x])
         carryFlag = 0;
+    else
+        carryFlag = 1;
     
     V[x] = V[x] - V[y];
     pc += 2;
 }
 
-// 8XY6 := VX = VX >> 1 {ie VX/2}, VF = least sig. byte
+// 8XY6 := Vx = Vx >> 1 {ie Vx/2}, VF = least sig. byte
 void Chip8::op_0x8XY6() {
     uint8_t x = (opcode & 0x0F00) >> 8;
 
-    carryFlag = (V[x] & 0x1u);
+    carryFlag = (V[x] & 0x1);
     V[x] = V[x] >> 1;
     pc += 2;
 }
 
-// 8XY5 := VX = VY - VX, VF = not borrow
+// 8XY7 := Vx = Vy - Vx, VF = 1 if "not borrow"
 void Chip8::op_0x8XY7() {
     uint8_t x = (opcode & 0x0F00) >> 8;
     uint8_t y = (opcode & 0x00F0) >> 4;
 
-    if (V[y] > V[x])
-        carryFlag = 1;
-    else
+    if (V[x] > V[y])
         carryFlag = 0;
+    else
+        carryFlag = 1;
     
     V[x] = V[y] - V[x];
     pc += 2;
 }
 
-// 8XYE := VX = VX >> 1 {ie VX*2}, VF = most sig. byte
+// 8XYE := Vx = Vx >> 1 {ie Vx*2}, VF = most sig. byte
 void Chip8::op_0x8XYE() {
     uint8_t x = (opcode & 0x0F00) >> 8;
 
@@ -332,7 +341,7 @@ void Chip8::op_0x8XYE() {
     pc += 2;
 }
 
-// 9XY0 := if VX != VY, skip next instruction
+// 9XY0 := if Vx != Vy, skip next instruction
 void Chip8::op_0x9XY0() {
     uint8_t x = (opcode & 0x0F00) >> 8;
     uint8_t y = (opcode & 0x00F0) >> 4;
@@ -343,49 +352,95 @@ void Chip8::op_0x9XY0() {
         pc += 2;
 }
 
+// ANNN := I = NNN
 void Chip8::op_0xANNN() {
     I = opcode & 0x0FFF;
     pc += 2;
 };
 
+// BNNN := Jump to NNN + V0
 void Chip8::op_0xBNNN() {
-
+    pc = V[0] + (opcode & 0x0FFF);
 }
 
+// CXKK := Vx = RAND & kk
 void Chip8::op_0xCXKK() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    uint8_t kk = opcode & 0x00FF;
 
+    V[x] = randByte() & kk;
+    pc += 2;
 }
 
 void Chip8::op_0xDXYN() {
 
 }
 
-void Chip8::op_0xEXA1() {
-
-}
-
+// EX9E := if key_Vx pressed, skip next instruction 
 void Chip8::op_0xEX9E() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
 
+    if (key[V[x]] != 0)
+        pc += 4;
+    else
+        pc += 2;
 }
 
+// EXA1 := if key_Vx not pressed, skip next instruction 
+void Chip8::op_0xEXA1() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    
+    if (key[V[x]] == 0)
+        pc += 4;
+    else
+        pc += 2;
+}
+
+// FX15 := Vx = delay_timer
 void Chip8::op_0xFX07() {
-
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    V[x] = delay_timer;
+    pc += 2;
 }
 
+// FX0A := wait for key-press, then store that key's value into Vx
 void Chip8::op_0xFX0A() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    bool keyPressed = false;
 
+    for (int i = 0; i < 16; i++) {
+        if (key[i] != 0) {
+            V[x] = i;
+            keyPressed = true;
+        }
+    }
+
+    if(keyPressed)
+        pc += 2;
 }
 
+// FX15 := delay_timer = Vx
 void Chip8::op_0xFX15() {
-
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    delay_timer = V[x];
+    pc += 2;
 }
 
+// FX18 := sound_timer = Vx
 void Chip8::op_0xFX18() {
-
+    uint8_t x = (opcode & 0x0F00) >> 8;
+    sound_timer = V[x];
+    pc += 2;
 }
 
+// FX1E := I = I + Vx
 void Chip8::op_0xFX1E() {
+    uint8_t x = (opcode & 0x0F00) >> 8;
 
+
+
+    I = I + V[x];
+    pc += 2;
 }
 
 void Chip8::op_0xFX29() {
